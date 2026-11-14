@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows 11 Portal System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #000;
+            overflow: hidden;
+            color: white;
+        }
+
+        #desktop {
+            width: 1280px;
+            height: 720px;
+            transform-origin: top left;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #0a0e27, #1a1f3a);
+            position: relative;
+        }
+
+        /* WALLPAPER THEMES */
+        #desktop.theme-black { background: #000000 !important; }
+        #desktop.theme-blue { background: linear-gradient(135deg, #0078d7, #005a9e) !important; }
+        #desktop.theme-purple { background: linear-gradient(135deg, #9B59B6, #8E44AD) !important; }
+        #desktop.theme-green { background: linear-gradient(135deg, #27AE60, #1E8449) !important; }
+        #desktop.theme-sunset { background: linear-gradient(135deg, #E67E22, #D35400) !important; }
+        #desktop.theme-ocean { background: linear-gradient(135deg, #2E86AB, #0B3C5D) !important; }
+        #desktop.theme-forest { background: linear-gradient(135deg, #1B4D2E, #0F3D1F) !important; }
+
+        /* WIDGETS */
+        #widgets {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 100;
+        }
+
+        .widget {
+            background: rgba(30, 30, 30, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px;
+            min-width: 180px;
+        }
+
+        .widget-title {
+            font-size: 10px;
+            color: #999;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            padding: 4px 0;
+        }
+
+        /* MAIN CONTENT */
+        #content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px;
+            z-index: 5;
+        }
+
+        #portal-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 170px);
+            grid-auto-rows: 210px;
+            gap: 20px;
+        }
+
+        .portal {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .portal:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-4px);
+        }
+
+        .portal-icon {
+            font-size: 72px;
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            width: 120px;
+            height: 120px;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+
+        .portal-name {
+            font-size: 11px;
+            text-align: center;
+            line-height: 1.2;
+            word-break: break-word;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #E74C3C;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            font-size: 14px;
+        }
+
+        .pin-btn {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            background: #0078d7;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: bold;
+            border: none;
+            font-size: 12px;
+        }
+
+        .edit-mode .delete-btn,
+        .edit-mode .pin-btn {
+            display: flex;
+        }
+
+        /* TASKBAR - CENTERED */
+        #taskbar {
+            position: fixed;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            height: 50px;
+            background: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            gap: 8px;
+            z-index: 10000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .taskbar-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: transparent;
+            color: white;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .taskbar-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .taskbar-btn:active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .taskbar-separator {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        #pinned-apps {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .pinned-app {
+            width: 56px;
+            height: 56px;
+            background: rgba(0, 120, 215, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 30px;
+            position: relative;
+        }
+
+        .pinned-app:hover {
+            background: rgba(0, 120, 215, 0.3);
+        }
+
+        .unpin-x {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: red;
+            color: white;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .pinned-app:hover .unpin-x {
+            display: flex;
+        }
+
+        .spacer {
+            flex-grow: 1;
+        }
+
+        #clock {
+            font-size: 12px;
+            color: #999;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        /* MODALS & MENUS */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            z-index: 9998;
+            backdrop-filter: blur(5px);
+        }
+
+        .overlay.active {
+            display: block;
+        }
+
+        /* START MENU - WINDOWS 11 STYLE */
+        #start-menu {
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 640px;
+            height: 600px;
+            background: rgba(32, 32, 32, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            display: none;
+            flex-direction: column;
+            z-index: 9999;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+            overflow: hidden;
+        }
+
+        #start-menu.active {
+            display: flex;
+        }
+
+        .start-search {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .start-search input {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            color: white;
+            outline: none;
+            font-size: 13px;
+        }
+
+        .start-search input::placeholder {
+            color: #999;
+        }
+
+        .start-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+        }
+
+        .start-tile {
+            aspect-ratio: 1;
+            background: rgba(0, 120, 215, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 9px;
+            position: relative;
+        }
+
+        .start-tile:hover {
+            background: rgba(0, 120, 215, 0.3);
+        }
+
+        .start-tile-icon {
+            font-size: 20px;
+            margin-bottom: 3px;
+        }
+
+        .search-result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .search-result-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .search-result-text {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .search-result-icon {
+            font-size: 18px;
+        }
+
+        .search-result-name {
+            font-size: 11px;
+        }
+
+        .wallpaper-menu {
+            position: fixed;
+            bottom: 70px;
+            right: 15px;
+            width: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(30, 30, 30, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            display: none;
+            flex-direction: column;
+            z-index: 9999;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+        }
+
+        .wallpaper-menu.active {
+            display: flex;
+        }
+
+        .menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            border: none;
+            background: transparent;
+            color: white;
+            text-align: left;
+            width: 100%;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(30, 30, 30, 0.98);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 30px;
+            min-width: 400px;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 9999;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-label {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .form-input {
+            padding: 10px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: white;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .form-input:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 15px;
+        }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #0078d7;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #106ebe;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 12px;
+            z-index: 9997;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .wallpaper-preview {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-right: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            vertical-align: middle;
+        }
+
+        .color-preview {
+            width: 100%;
+            height: 60px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 10px 0;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #0078d7;
+            cursor: pointer;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .menu-section {
+            padding: 10px;
+            font-size: 10px;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .windows-logo {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            position: relative;
+        }
+
+        .windows-logo span {
+            position: absolute;
+            background: currentColor;
+        }
+
+        .w1 { width: 8px; height: 8px; top: 0; left: 0; }
+        .w2 { width: 8px; height: 8px; top: 0; right: 0; }
+        .w3 { width: 8px; height: 8px; bottom: 0; left: 0; }
+        .w4 { width: 8px; height: 8px; bottom: 0; right: 0; }
+        /* WINDOWS 11 START MENU OVERRIDES */
+        #start-menu {
+            width: 640px;
+            height: 720px;
+            bottom: 72px;
+            background: rgba(32, 32, 32, 0.92);
+            border-radius: 14px;
+        }
+        .start-search input {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 6px;
+            padding: 10px 14px;
+        }
+        .start-tile {
+            aspect-ratio: auto;
+            height: 84px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            font-size: 11px;
+            gap: 6px;
+        }
+        .start-tile:hover { background: rgba(255, 255, 255, 0.08); }
+        .start-tile-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 0;
+        }
+        .start-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 18px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(0, 0, 0, 0.25);
+            font-size: 12px;
+        }
+        .start-footer button {
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .start-footer button:hover { background: rgba(255, 255, 255, 0.08); }
+        #pin-menu {
+            position: fixed;
+            width: 190px;
+            background: rgba(40, 40, 40, 0.97);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 6px;
+            z-index: 10001;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        }
+        #pin-menu.active { display: flex; }
+
+        /* CENTERED FLOATING TASKBAR (sits above the full-width bar) */
+        #taskbar-center {
+            position: fixed;
+            bottom: 62px;
+            left: 50%;
+            transform: translateX(-50%);
+            height: 56px;
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(30, 30, 30, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            z-index: 10000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        #pinned-apps-center { display: flex; gap: 6px; align-items: center; }
+        #start-menu { bottom: 128px; }
+
+        /* FULL-WIDTH TASKBAR */
+        #taskbar {
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: auto;
+            transform: none;
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+            border-bottom: none;
+            padding: 0 12px;
+        }
+        /* ALL TASKBAR OPTIONS CENTERED (matches the reference screenshot) */
+        #taskbar {
+            justify-content: center;
+            gap: 8px;
+        }
+        #taskbar .spacer { flex-grow: 0; }
+        #clock {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        #taskbar-center { display: none; }
+        #start-menu { bottom: 64px; }
+        /* PORTAL DB8 SANDBOX WINDOW */
+        .app-window {
+            position: absolute;
+            left: 200px;
+            top: 120px;
+            width: 960px;
+            height: 600px;
+            display: none;
+            flex-direction: column;
+            background: #1f1f1f;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            z-index: 9000;
+        }
+        .app-window.active { display: flex; }
+        .app-window.max {
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: calc(100% - 50px) !important;
+            border-radius: 0;
+        }
+        .app-titlebar {
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            background: #2b2b2b;
+            cursor: move;
+            font-size: 12px;
+        }
+        .app-controls { display: flex; gap: 4px; align-items: center; }
+        .app-controls button,
+        .app-controls a {
+            background: transparent;
+            border: none;
+            color: white;
+            width: 30px;
+            height: 26px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+        }
+        .app-controls button:hover,
+        .app-controls a:hover { background: rgba(255, 255, 255, 0.1); }
+        #sandbox-frame {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: #fff;
+        }
+        .app-note {
+            font-size: 10px;
+            color: #999;
+            padding: 4px 10px;
+            background: #2b2b2b;
+        }
+        .settings-body {
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            font-size: 13px;
+            background: #1f1f1f;
+            flex: 1;
+        }
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .setting-row small { display: block; color: #999; font-size: 11px; margin-top: 3px; }
+        .toggle-switch {
+            width: 44px;
+            height: 22px;
+            accent-color: #0078d7;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="desktop" class="theme-black">
+    <!-- WIDGETS -->
+    <div id="widgets">
+        <div class="widget">
+            <div class="widget-title">⛅ Weather</div>
+            <div style="text-align: center; margin: 10px 0;">
+                <div style="font-size: 24px; color: #E67E22; font-weight: bold;" id="temp">72°</div>
+                <div style="font-size: 10px; color: #999;">Partly Cloudy</div>
+            </div>
+        </div>
+
+        <div class="widget">
+            <div class="widget-title">📊 System</div>
+            <div class="stat-row">
+                <span>CPU</span>
+                <span style="color: #0078d7;" id="cpu-stat">45%</span>
+            </div>
+            <div class="stat-row">
+                <span>Memory</span>
+                <span style="color: #0078d7;" id="mem-stat">62%</span>
+            </div>
+            <div class="stat-row">
+                <span>Portals</span>
+                <span style="color: #0078d7;" id="portal-count">0</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="content">
+        <div id="portal-grid"></div>
+    </div>
+
+    <!-- START MENU - WINDOWS 11 -->
+    <div id="start-menu">
+        <div class="start-search">
+            <input type="text" id="menu-search" placeholder="Type here to search" onkeyup="liveSearch(event)">
+            <div id="search-recommendations" style="display: none; margin-top: 8px; padding: 8px; background: rgba(0, 120, 215, 0.1); border-radius: 6px;">
+                <div style="font-size: 10px; color: #999; margin-bottom: 8px; font-weight: 600;">TOP RESULT</div>
+                <div id="top-result" style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 120, 215, 0.2); padding: 10px; border-radius: 6px; cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                        <span id="top-icon" style="font-size: 24px;">🌐</span>
+                        <span id="top-name">No results</span>
+                    </div>
+                    <button id="pin-top-btn" class="btn btn-primary" style="padding: 4px 12px; font-size: 11px; display: none;" onclick="pinTopResult(event)">📌 PIN</button>
+                </div>
+                <div style="font-size: 10px; color: #999; margin: 12px 0 8px 0; font-weight: 600;">ALL RESULTS</div>
+                <div id="search-results" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+        </div>
+        <div style="font-size: 11px; color: #999; padding: 12px 15px; font-weight: 600;">PINNED</div>
+        <div id="start-pinned" style="padding: 0 15px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 15px;"></div>
+        <div style="font-size: 11px; color: #999; padding: 0 15px 8px 15px; font-weight: 600;">RECENT</div>
+        <div id="start-recent" style="padding: 0 15px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 15px;"></div>
+        <div style="font-size: 11px; color: #999; padding: 0 15px 8px 15px; font-weight: 600;">ALL APPS</div>
+        <div class="start-content" id="start-content"></div>
+        <div class="start-footer">
+            <span>👤 Saahir</span>
+            <div>
+                <button onclick="toggleEditMode(); closeStart();" title="Edit portals">✏️</button>
+                <button onclick="toggleWallpaper(); closeStart();" title="Wallpaper">🎨</button>
+                <button onclick="location.reload()" title="Restart">⏻</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PORTAL DB8 SANDBOX WINDOW -->
+    <div class="app-window" id="sandbox-window">
+        <div class="app-titlebar" id="sandbox-titlebar">
+            <span>🧪 Portal DB8 Sandbox</span>
+            <div class="app-controls">
+                <a id="sandbox-open-tab" href="#" target="_blank" title="Open in new tab">↗</a>
+                <button onclick="toggleSandboxMax()" title="Maximize">▢</button>
+                <button onclick="closeSandboxWindow()" title="Close">✕</button>
+            </div>
+        </div>
+        <iframe id="sandbox-frame" src="about:blank"></iframe>
+        <div class="app-note">If the page is blank, the site blocks embedding. Use ↗ to open it in a tab.</div>
+    </div>
+
+    <!-- SETTINGS WINDOW -->
+    <div class="app-window" id="settings-window" style="left: 300px; top: 140px; width: 440px; height: 260px;">
+        <div class="app-titlebar" id="settings-titlebar">
+            <span>⚙️ Settings</span>
+            <div class="app-controls">
+                <button onclick="closeSettings()" title="Close">✕</button>
+            </div>
+        </div>
+        <div class="settings-body">
+            <div class="setting-row">
+                <div>
+                    Open websites in windows
+                    <small>Opens every site, including new ones, in a draggable window</small>
+                </div>
+                <input type="checkbox" class="toggle-switch" id="window-mode-toggle" onchange="setWindowMode(this.checked)">
+            </div>
+        </div>
+    </div>
+
+    <!-- PIN MENU (right-click on any app) -->
+    <div id="pin-menu">
+        <button class="menu-item" id="pin-menu-action" onclick="pinMenuAction()">📌 Pin to taskbar</button>
+    </div>
+
+    <!-- WALLPAPER MENU -->
+    <div class="wallpaper-menu" id="wallpaper-menu">
+        <div class="menu-section">Themes</div>
+        <button class="menu-item" onclick="setTheme('black')"><span class="wallpaper-preview" style="background: #000;"></span>Black</button>
+        <button class="menu-item" onclick="setTheme('blue')"><span class="wallpaper-preview" style="background: linear-gradient(135deg, #0078d7, #005a9e);"></span>Blue</button>
+        <button class="menu-item" onclick="setTheme('purple')"><span class="wallpaper-preview" style="background: linear-gradient(135deg, #9B59B6, #8E44AD);"></span>Purple</button>
+        <button class="menu-item" onclick="setTheme('green')"><span class="wallpaper-preview" style="background: linear-gradient(135deg, #27AE60, #1E8449);"></span>Green</button>
+        <button class="menu-item" onclick="setTheme('sunset')"><span class="wallpaper-preview" style="background: linear-gradient(135deg, #E67E22, #D35400);"></span>Sunset</button>
+        <button class="menu-item" onclick="setTheme('ocean')"><span class="wallpaper-preview" style="background: linear-gradient(135deg, #2E86AB, #0B3C5D);"></span>Ocean</button>
+        <button class="menu-item" onclick="setTheme('forest')"><span class="wallpaper-preview" style="background: linear-gradient(135deg, #1B4D2E, #0F3D1F);"></span>Forest</button>
+
+        <div class="menu-section">Custom</div>
+        <button class="menu-item" onclick="openColorModal()">🎨 Solid Color</button>
+        <button class="menu-item" onclick="openGradientModal()">🌈 Gradient</button>
+        <button class="menu-item" onclick="document.getElementById('file-input').click()">🖼️ Upload</button>
+        <input type="file" id="file-input" accept="image/*" onchange="uploadWallpaper(event)">
+    </div>
+
+    <!-- MODALS -->
+    <div class="overlay" id="overlay"></div>
+
+    <div class="modal" id="add-portal-modal">
+        <div class="modal-title">➕ Add Portal</div>
+        <div class="form-group">
+            <label class="form-label">Name:</label>
+            <input type="text" id="portal-name" class="form-input" placeholder="e.g., GitHub">
+        </div>
+        <div class="form-group">
+            <label class="form-label">URL:</label>
+            <input type="text" id="portal-url" class="form-input" placeholder="e.g., github.com">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Icon:</label>
+            <input type="text" id="portal-icon" class="form-input" placeholder="e.g., 🐙" maxlength="5" value="🌐">
+        </div>
+        <div class="modal-buttons">
+            <button class="btn btn-secondary" onclick="closeAllModals()">Cancel</button>
+            <button class="btn btn-primary" onclick="createPortal()">Add</button>
+        </div>
+    </div>
+
+    <div class="modal" id="color-modal">
+        <div class="modal-title">🎨 Pick a Color</div>
+        <input type="color" id="color-input" value="#0078d7" onchange="previewColor()">
+        <div class="color-preview" id="color-preview" style="background: #0078d7;"></div>
+        <div class="modal-buttons">
+            <button class="btn btn-secondary" onclick="closeAllModals()">Cancel</button>
+            <button class="btn btn-primary" onclick="applyColor()">Apply</button>
+        </div>
+    </div>
+
+    <div class="modal" id="gradient-modal">
+        <div class="modal-title">🌈 Gradient</div>
+        <div class="form-group">
+            <label class="form-label">Color 1:</label>
+            <input type="color" id="grad-c1" value="#FF006E" onchange="previewGradient()">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Color 2:</label>
+            <input type="color" id="grad-c2" value="#00D9FF" onchange="previewGradient()">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Angle: <span id="angle-text">45</span>°</label>
+            <input type="range" id="grad-angle" min="0" max="360" value="45" onchange="previewGradient()">
+        </div>
+        <div class="color-preview" id="gradient-preview"></div>
+        <div class="modal-buttons">
+            <button class="btn btn-secondary" onclick="closeAllModals()">Cancel</button>
+            <button class="btn btn-primary" onclick="applyGradient()">Apply</button>
+        </div>
+    </div>
+
+    <!-- CENTERED FLOATING TASKBAR -->
+    <div id="taskbar-center">
+        <button class="taskbar-btn" onclick="toggleStart()" title="Start">
+            <span class="windows-logo">
+                <span class="w1"></span><span class="w2"></span>
+                <span class="w3"></span><span class="w4"></span>
+            </span>
+        </button>
+        <div class="taskbar-separator"></div>
+        <div id="pinned-apps-center"></div>
+    </div>
+
+    <!-- TASKBAR - CENTERED WINDOWS 11 -->
+    <div id="taskbar">
+        <button class="taskbar-btn" onclick="toggleStart()" title="Start">
+            <span class="windows-logo">
+                <span class="w1"></span><span class="w2"></span>
+                <span class="w3"></span><span class="w4"></span>
+            </span>
+        </button>
+
+        <div class="taskbar-separator"></div>
+
+        <div id="pinned-apps"></div>
+
+        <div class="taskbar-separator"></div>
+
+        <button class="taskbar-btn" onclick="openAddPortal()" title="Add">➕</button>
+        <button class="taskbar-btn" onclick="toggleEditMode()" title="Edit">✏️</button>
+        <button class="taskbar-btn" onclick="toggleWallpaper()" title="Wallpaper">🎨</button>
+        <button class="taskbar-btn" onclick="showStats()" title="Stats">📊</button>
+
+        <div class="spacer"></div>
+
+        <div id="clock">10:00</div>
+    </div>
+</div>
+
+<script>
+    // INDEXEDDB FOR IMAGES
+    let db;
+    const dbRequest = indexedDB.open('PortalDB', 1);
+    
+    dbRequest.onerror = () => console.log('IndexedDB failed');
+    dbRequest.onsuccess = (e) => {
+        db = e.target.result;
+    };
+    dbRequest.onupgradeneeded = (e) => {
+        const database = e.target.result;
+        if (!database.objectStoreNames.contains('wallpapers')) {
+            database.createObjectStore('wallpapers');
+        }
+    };
+
+    function saveImageToDB(imageData) {
+        if (!db) return;
+        const tx = db.transaction('wallpapers', 'readwrite');
+        const store = tx.objectStore('wallpapers');
+        store.put(imageData, 'current-wallpaper');
+    }
+
+    function loadImageFromDB(callback) {
+        if (!db) return;
+        const tx = db.transaction('wallpapers', 'readonly');
+        const store = tx.objectStore('wallpapers');
+        const request = store.get('current-wallpaper');
+        request.onsuccess = () => callback(request.result);
+    }
+
+    function deleteImageFromDB() {
+        if (!db) return;
+        const tx = db.transaction('wallpapers', 'readwrite');
+        const store = tx.objectStore('wallpapers');
+        store.delete('current-wallpaper');
+    }
+
+    // STATE
+    let portals = [];
+    let pinnedApps = [];
+    let editMode = false;
+    let currentTheme = 'black';
+
+    // INIT
+    window.addEventListener('load', () => {
+        portals = JSON.parse(localStorage.getItem('portals') || JSON.stringify([
+            { name: 'Google Docs', icon: '📄', url: 'https://docs.google.com' },
+            { name: 'GitHub', icon: '🐙', url: 'https://github.com' },
+            { name: 'YouTube', icon: '🎬', url: 'https://youtube.com' },
+        ]));
+
+        pinnedApps = JSON.parse(localStorage.getItem('pinnedApps') || '[]');
+
+        currentTheme = localStorage.getItem('theme') || 'black';
+        document.getElementById('desktop').className = 'theme-' + currentTheme;
+
+        // LOAD SAVED WALLPAPER
+        const savedWallpaper = localStorage.getItem('wallpaper');
+        const wallpaperType = localStorage.getItem('wallpaper-type');
+        
+        if (wallpaperType === 'color' && savedWallpaper) {
+            document.getElementById('desktop').style.background = savedWallpaper;
+        } else if (wallpaperType === 'gradient' && savedWallpaper) {
+            document.getElementById('desktop').style.background = savedWallpaper;
+        } else if (wallpaperType === 'image') {
+            loadImageFromDB((imageData) => {
+                if (imageData) {
+                    document.getElementById('desktop').style.background = `url('${imageData}')`;
+                    document.getElementById('desktop').style.backgroundSize = 'cover';
+                    document.getElementById('desktop').style.backgroundPosition = 'center';
+                    document.getElementById('desktop').style.backgroundAttachment = 'fixed';
+                }
+            });
+        }
+
+        renderPortals();
+        renderPinnedApps();
+        renderStartMenu();
+        updateClock();
+        updateStats();
+
+        setInterval(updateClock, 1000);
+        setInterval(updateStats, 3000);
+
+        document.getElementById('overlay').addEventListener('click', closeAllModals);
+        document.getElementById('menu-search').addEventListener('keyup', menuSearch);
+    });
+
+    // PORTAL FUNCTIONS
+    function renderPortals() {
+        const grid = document.getElementById('portal-grid');
+        grid.innerHTML = '';
+
+        portals.forEach((p, i) => {
+            const div = document.createElement('div');
+            div.className = 'portal';
+            div.innerHTML = `
+                <button class="pin-btn" onclick="pinPortal(${i})" title="Pin to taskbar">📌</button>
+                <button class="delete-btn" onclick="deletePortal(${i})">×</button>
+                <button class="portal-icon" onclick="event.stopPropagation(); if(!editMode) openLink('${p.url}')">${p.icon}</button>
+                <div class="portal-name">${p.name}</div>
+            `;
+            div.addEventListener('click', () => !editMode && openLink(p.url));
+            grid.appendChild(div);
+        });
+
+        document.getElementById('portal-count').textContent = portals.length;
+        renderStartMenu();
+    }
+
+    function renderStartMenu() {
+        renderStartContent();
+        renderStartPinned();
+        renderRecent();
+    }
+
+    function renderPinnedApps() {
+        const container = document.getElementById('pinned-apps');
+        container.innerHTML = '';
+
+        pinnedApps.forEach((idx, i) => {
+            if (portals[idx]) {
+                const p = portals[idx];
+                const div = document.createElement('div');
+                div.className = 'pinned-app';
+                div.innerHTML = `
+                    ${p.icon}
+                    <button class="unpin-x" onclick="unpinPortal(${idx})">×</button>
+                `;
+                div.addEventListener('click', () => !editMode && openLink(p.url));
+                container.appendChild(div);
+            }
+        });
+
+        renderStartPinned();
+        renderCenterPinned();
+    }
+
+    function renderCenterPinned() {
+        const container = document.getElementById('pinned-apps-center');
+        if (!container) return;
+        container.innerHTML = '';
+        pinnedApps.forEach((idx) => {
+            if (portals[idx]) {
+                const p = portals[idx];
+                const div = document.createElement('div');
+                div.className = 'pinned-app';
+                div.innerHTML = `${p.icon}<button class="unpin-x" onclick="event.stopPropagation(); unpinPortal(${idx})">×</button>`;
+                div.addEventListener('click', () => !editMode && openLink(p.url));
+                container.appendChild(div);
+            }
+        });
+    }
+
+    function pinPortal(idx) {
+        if (!pinnedApps.includes(idx) && pinnedApps.length < 10) {
+            pinnedApps.push(idx);
+            localStorage.setItem('pinnedApps', JSON.stringify(pinnedApps));
+            renderPinnedApps();
+            toast('📌 Pinned!');
+        } else if (pinnedApps.length >= 10) {
+            toast('Max 10 pinned!');
+        }
+    }
+
+    function unpinPortal(idx) {
+        pinnedApps = pinnedApps.filter(i => i !== idx);
+        localStorage.setItem('pinnedApps', JSON.stringify(pinnedApps));
+        renderPinnedApps();
+        toast('📌 Unpinned!');
+    }
+
+    function createPortal() {
+        const name = document.getElementById('portal-name').value.trim();
+        const url = document.getElementById('portal-url').value.trim();
+        const icon = document.getElementById('portal-icon').value.trim() || '🌐';
+
+        if (!name || !url) { toast('Fill all fields!'); return; }
+
+        portals.push({
+            name,
+            url: url.startsWith('http') ? url : 'https://' + url,
+            icon
+        });
+
+        localStorage.setItem('portals', JSON.stringify(portals));
+        renderPortals();
+        renderStartMenu();
+        closeAllModals();
+        toast('✅ Portal added!');
+        document.getElementById('portal-name').value = '';
+        document.getElementById('portal-url').value = '';
+    }
+
+    function deletePortal(i) {
+        if (confirm('Delete?')) {
+            portals.splice(i, 1);
+            pinnedApps = pinnedApps.filter(idx => idx !== i);
+            localStorage.setItem('portals', JSON.stringify(portals));
+            localStorage.setItem('pinnedApps', JSON.stringify(pinnedApps));
+            renderPortals();
+            renderPinnedApps();
+            renderStartMenu();
+        }
+    }
+
+    // SEARCH SYSTEM
+    let searchTopResult = null;
+
+    function liveSearch(event) {
+        const query = document.getElementById('menu-search').value.toLowerCase().trim();
+        const recommendationsDiv = document.getElementById('search-recommendations');
+        const resultsDiv = document.getElementById('search-results');
+        const topResultDiv = document.getElementById('top-result');
+        const pinTopBtn = document.getElementById('pin-top-btn');
+
+        if (query.length === 0) {
+            recommendationsDiv.style.display = 'none';
+            renderStartContent();
+            return;
+        }
+
+        recommendationsDiv.style.display = 'block';
+
+        // Filter portals
+        const filtered = portals.filter(p => 
+            p.name.toLowerCase().includes(query) || 
+            p.url.toLowerCase().includes(query)
+        );
+
+        if (filtered.length === 0) {
+            topResultDiv.innerHTML = '<span>No results found</span>';
+            pinTopBtn.style.display = 'none';
+            resultsDiv.innerHTML = '';
+            searchTopResult = null;
+            return;
+        }
+
+        // Top result
+        searchTopResult = filtered[0];
+        topResultDiv.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                <span style="font-size: 24px;">${searchTopResult.icon}</span>
+                <span>${searchTopResult.name}</span>
+            </div>
+        `;
+        topResultDiv.style.cursor = 'pointer';
+        topResultDiv.onclick = () => { openLink(searchTopResult.url); closeStart(); };
+        pinTopBtn.style.display = 'block';
+
+        // All results
+        resultsDiv.innerHTML = '';
+        filtered.forEach(p => {
+            const div = document.createElement('div');
+            div.className = 'search-result-item';
+            div.innerHTML = `
+                <div class="search-result-text">
+                    <span class="search-result-icon">${p.icon}</span>
+                    <span class="search-result-name">${p.name}</span>
+                </div>
+                <button class="btn btn-primary" style="padding: 4px 12px; font-size: 10px;" onclick="quickPin(${portals.indexOf(p)}, event)">📌</button>
+            `;
+            div.onclick = () => { openLink(p.url); closeStart(); };
+            resultsDiv.appendChild(div);
+        });
+    }
+
+    function pinTopResult(event) {
+        event.stopPropagation();
+        if (searchTopResult) {
+            const idx = portals.findIndex(p => p === searchTopResult);
+            if (idx >= 0) pinPortal(idx);
+        }
+    }
+
+    function quickPin(idx, event) {
+        event.stopPropagation();
+        pinPortal(idx);
+    }
+
+    function renderStartContent() {
+        const container = document.getElementById('start-content');
+        container.innerHTML = '';
+
+        portals.forEach(p => {
+            const tile = document.createElement('div');
+            tile.className = 'start-tile';
+            tile.innerHTML = `<div class="start-tile-icon">${p.icon}</div><div>${p.name}</div>`;
+            tile.onclick = () => {
+                openLink(p.url);
+                closeStart();
+            };
+            container.appendChild(tile);
+        });
+    }
+
+    function renderStartPinned() {
+        const container = document.getElementById('start-pinned');
+        container.innerHTML = '';
+
+        pinnedApps.slice(0, 6).forEach((idx) => {
+            if (portals[idx]) {
+                const p = portals[idx];
+                const div = document.createElement('div');
+                div.className = 'start-tile';
+                div.innerHTML = `<div class="start-tile-icon">${p.icon}</div><div>${p.name}</div>`;
+                div.onclick = () => { openLink(p.url); closeStart(); };
+                container.appendChild(div);
+            }
+        });
+    }
+
+    // UI
+    function toggleStart() {
+        document.getElementById('start-menu').classList.toggle('active');
+        document.getElementById('wallpaper-menu').classList.remove('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+
+    function closeStart() {
+        document.getElementById('start-menu').classList.remove('active');
+        document.getElementById('overlay').classList.remove('active');
+    }
+
+    function toggleWallpaper() {
+        document.getElementById('wallpaper-menu').classList.toggle('active');
+        document.getElementById('start-menu').classList.remove('active');
+        document.getElementById('overlay').classList.toggle('active');
+    }
+
+    function toggleEditMode() {
+        editMode = !editMode;
+        document.getElementById('desktop').classList.toggle('edit-mode', editMode);
+        toast(editMode ? '✏️ Edit ON' : '✏️ Edit OFF');
+    }
+
+    function openAddPortal() {
+        document.getElementById('overlay').classList.add('active');
+        document.getElementById('add-portal-modal').classList.add('active');
+        document.getElementById('portal-name').focus();
+    }
+
+    function openColorModal() {
+        document.getElementById('overlay').classList.add('active');
+        document.getElementById('color-modal').classList.add('active');
+    }
+
+    function previewColor() {
+        const c = document.getElementById('color-input').value;
+        document.getElementById('color-preview').style.background = c;
+    }
+
+    function applyColor() {
+        const c = document.getElementById('color-input').value;
+        document.getElementById('desktop').style.background = c;
+        localStorage.setItem('wallpaper', c);
+        localStorage.setItem('wallpaper-type', 'color');
+        closeAllModals();
+        toast('🎨 Applied!');
+    }
+
+    function openGradientModal() {
+        document.getElementById('overlay').classList.add('active');
+        document.getElementById('gradient-modal').classList.add('active');
+        previewGradient();
+    }
+
+    function previewGradient() {
+        const c1 = document.getElementById('grad-c1').value;
+        const c2 = document.getElementById('grad-c2').value;
+        const a = document.getElementById('grad-angle').value;
+        const g = `linear-gradient(${a}deg, ${c1}, ${c2})`;
+        document.getElementById('gradient-preview').style.background = g;
+        document.getElementById('angle-text').textContent = a;
+    }
+
+    function applyGradient() {
+        const c1 = document.getElementById('grad-c1').value;
+        const c2 = document.getElementById('grad-c2').value;
+        const a = document.getElementById('grad-angle').value;
+        const gradient = `linear-gradient(${a}deg, ${c1}, ${c2})`;
+        document.getElementById('desktop').style.background = gradient;
+        localStorage.setItem('wallpaper', gradient);
+        localStorage.setItem('wallpaper-type', 'gradient');
+        closeAllModals();
+        toast('🌈 Applied!');
+    }
+
+    function uploadWallpaper(e) {
+        const f = e.target.files[0];
+        if (!f) return;
+        
+        if (f.size > 10 * 1024 * 1024) {
+            toast('❌ Image too large (max 10MB)');
+            return;
+        }
+
+        const r = new FileReader();
+        r.onload = (ev) => {
+            const imageData = ev.target.result;
+            saveImageToDB(imageData);
+            document.getElementById('desktop').style.background = `url('${imageData}')`;
+            document.getElementById('desktop').style.backgroundSize = 'cover';
+            document.getElementById('desktop').style.backgroundPosition = 'center';
+            document.getElementById('desktop').style.backgroundAttachment = 'fixed';
+            localStorage.setItem('wallpaper-type', 'image');
+            closeAllModals();
+            toast('🖼️ Uploaded!');
+        };
+        r.readAsDataURL(f);
+    }
+
+    function setTheme(t) {
+        currentTheme = t;
+        document.getElementById('desktop').className = 'theme-' + t;
+        localStorage.setItem('theme', t);
+        localStorage.removeItem('wallpaper');
+        localStorage.removeItem('wallpaper-type');
+        deleteImageFromDB();
+        closeAllModals();
+        toast('🎨 Theme!');
+    }
+
+    function closeAllModals() {
+        document.getElementById('overlay').classList.remove('active');
+        document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+        document.getElementById('start-menu').classList.remove('active');
+        document.getElementById('wallpaper-menu').classList.remove('active');
+    }
+
+    function openLink(url) {
+        if (url === SETTINGS_URL) {
+            openSettings();
+        } else if (url === SANDBOX_URL) {
+            openSandboxWindow();
+        } else if (isWindowMode()) {
+            openWebWindow(url);
+        } else {
+            window.open(url, '_blank');
+        }
+        recordRecent(url);
+    }
+
+    // RECENT APPS (last 6 opened, saved to localStorage)
+    function recordRecent(url) {
+        let recent = JSON.parse(localStorage.getItem('recentApps') || '[]');
+        recent = recent.filter(u => u !== url);
+        recent.unshift(url);
+        recent = recent.slice(0, 6);
+        localStorage.setItem('recentApps', JSON.stringify(recent));
+        renderRecent();
+    }
+
+    function renderRecent() {
+        const container = document.getElementById('start-recent');
+        if (!container) return;
+        const recent = JSON.parse(localStorage.getItem('recentApps') || '[]');
+        container.innerHTML = '';
+        recent.forEach(url => {
+            const p = portals.find(x => x.url === url);
+            if (!p) return;
+            const div = document.createElement('div');
+            div.className = 'start-tile';
+            div.innerHTML = `<div class="start-tile-icon">${p.icon}</div><div>${p.name}</div>`;
+            div.onclick = () => { openLink(p.url); closeStart(); };
+            container.appendChild(div);
+        });
+    }
+
+    function updateClock() {
+        const n = new Date();
+        document.getElementById('clock').textContent = n.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + n.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
+
+    function updateStats() {
+        document.getElementById('temp').textContent = Math.floor(Math.random() * 40 + 35) + '°';
+        document.getElementById('cpu-stat').textContent = Math.floor(Math.random() * 60 + 20) + '%';
+        document.getElementById('mem-stat').textContent = Math.floor(Math.random() * 40 + 40) + '%';
+    }
+
+    function showStats() {
+        alert(`📊 STATS\n━━━━━\nPortals: ${portals.length}\nPinned: ${pinnedApps.length}\nStorage: ${Math.round(new Blob([JSON.stringify(localStorage)]).size / 1024)}KB`);
+    }
+
+    function toast(m) {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.textContent = m;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+
+    // 720p SCALING: keeps the 1280x720 canvas fitted to any window size
+    function fitToScreen() {
+        const desktop = document.getElementById('desktop');
+        const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+        desktop.style.zoom = scale;
+        desktop.style.position = 'absolute';
+        desktop.style.left = ((window.innerWidth - 1280 * scale) / 2) + 'px';
+        desktop.style.top = ((window.innerHeight - 720 * scale) / 2) + 'px';
+    }
+    window.addEventListener('load', fitToScreen);
+    window.addEventListener('resize', fitToScreen);
+
+    // PIN TO TASKBAR: right-click any app (desktop or Start menu) to pin or unpin
+    let pinTargetIdx = null;
+
+    document.addEventListener('contextmenu', (e) => {
+        const tile = e.target.closest('.portal, .start-tile');
+        if (!tile) return;
+        e.preventDefault();
+        const nameEl = tile.querySelector('.portal-name') || tile.querySelectorAll('div')[1];
+        const idx = portals.findIndex(p => p.name === (nameEl ? nameEl.textContent : ''));
+        if (idx < 0) return;
+        pinTargetIdx = idx;
+        const isPinned = pinnedApps.includes(idx);
+        document.getElementById('pin-menu-action').textContent = isPinned ? '📌 Unpin from taskbar' : '📌 Pin to taskbar';
+        const menu = document.getElementById('pin-menu');
+        menu.style.left = Math.min(e.clientX, window.innerWidth - 200) + 'px';
+        menu.style.top = Math.min(e.clientY, window.innerHeight - 60) + 'px';
+        menu.classList.add('active');
+    });
+
+    function pinMenuAction() {
+        if (pinTargetIdx === null) return;
+        if (pinnedApps.includes(pinTargetIdx)) unpinPortal(pinTargetIdx);
+        else pinPortal(pinTargetIdx);
+        document.getElementById('pin-menu').classList.remove('active');
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('#pin-menu')) {
+            document.getElementById('pin-menu').classList.remove('active');
+        }
+    });
+
+    // PORTAL DB8 SANDBOX APP
+    const SANDBOX_URL = 'https://saahirtsharma-hub.github.io/PortalDB8_Relese17.7/';
+
+    // Adds the Sandbox tile, or updates an existing 17.6 tile to 17.7
+    function ensureSandbox() {
+        const existing = portals.find(p => p.name === 'Portal DB8 Sandbox' || p.url.includes('PortalDB8_Relese17'));
+        if (existing) {
+            if (existing.url === SANDBOX_URL) return;
+            existing.url = SANDBOX_URL;
+        } else {
+            portals.push({ name: 'Portal DB8 Sandbox', icon: '🧪', url: SANDBOX_URL });
+        }
+        localStorage.setItem('portals', JSON.stringify(portals));
+        renderPortals();
+    }
+    window.addEventListener('load', ensureSandbox);
+
+    function openSandboxWindow() {
+        const win = document.getElementById('sandbox-window');
+        const frame = document.getElementById('sandbox-frame');
+        document.getElementById('sandbox-open-tab').href = SANDBOX_URL;
+        if (frame.src === 'about:blank' || frame.src === '') frame.src = SANDBOX_URL;
+        win.classList.add('active');
+        closeStart();
+    }
+
+    function closeSandboxWindow() {
+        const win = document.getElementById('sandbox-window');
+        win.classList.remove('active', 'max');
+        document.getElementById('sandbox-frame').src = 'about:blank';
+    }
+
+    function toggleSandboxMax() {
+        document.getElementById('sandbox-window').classList.toggle('max');
+    }
+
+    // Dragging by the titlebar (adjusted for the 720p canvas zoom)
+    (function enableSandboxDrag() {
+        const win = document.getElementById('sandbox-window');
+        const bar = document.getElementById('sandbox-titlebar');
+        const frame = document.getElementById('sandbox-frame');
+        let dragging = false, startX = 0, startY = 0, startL = 0, startT = 0;
+
+        bar.addEventListener('mousedown', (e) => {
+            if (e.target.closest('button, a')) return;
+            dragging = true;
+            win.classList.remove('max');
+            startX = e.clientX;
+            startY = e.clientY;
+            startL = win.offsetLeft;
+            startT = win.offsetTop;
+            frame.style.pointerEvents = 'none';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!dragging) return;
+            const scale = parseFloat(document.getElementById('desktop').style.zoom) || 1;
+            win.style.left = (startL + (e.clientX - startX) / scale) + 'px';
+            win.style.top = (startT + (e.clientY - startY) / scale) + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            dragging = false;
+            frame.style.pointerEvents = '';
+        });
+    })();
+
+    // SETTINGS APP
+    const SETTINGS_URL = 'settings://app';
+
+    function ensureSettings() {
+        if (!portals.some(p => p.url === SETTINGS_URL)) {
+            portals.push({ name: 'Settings', icon: '⚙️', url: SETTINGS_URL });
+            localStorage.setItem('portals', JSON.stringify(portals));
+            renderPortals();
+        }
+    }
+    window.addEventListener('load', ensureSettings);
+
+    function isWindowMode() {
+        return localStorage.getItem('windowMode') === '1';
+    }
+
+    function setWindowMode(on) {
+        localStorage.setItem('windowMode', on ? '1' : '0');
+        toast(on ? '🪟 Websites open in windows' : '🌐 Websites open in new tabs');
+    }
+
+    function openSettings() {
+        document.getElementById('window-mode-toggle').checked = isWindowMode();
+        document.getElementById('settings-window').classList.add('active');
+        closeStart();
+    }
+
+    function closeSettings() {
+        document.getElementById('settings-window').classList.remove('active');
+    }
+
+    // GENERIC DRAGGABLE WINDOW (used by web windows)
+    function makeDraggable(win, bar, frame) {
+        let dragging = false, startX = 0, startY = 0, startL = 0, startT = 0;
+        bar.addEventListener('mousedown', (e) => {
+            if (e.target.closest('button, a')) return;
+            dragging = true;
+            win.classList.remove('max');
+            startX = e.clientX;
+            startY = e.clientY;
+            startL = win.offsetLeft;
+            startT = win.offsetTop;
+            frame.style.pointerEvents = 'none';
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!dragging) return;
+            const scale = parseFloat(document.getElementById('desktop').style.zoom) || 1;
+            win.style.left = (startL + (e.clientX - startX) / scale) + 'px';
+            win.style.top = (startT + (e.clientY - startY) / scale) + 'px';
+        });
+        document.addEventListener('mouseup', () => {
+            dragging = false;
+            frame.style.pointerEvents = '';
+        });
+    }
+
+    // Opens any website in its own draggable window
+    let webWindowZ = 9001;
+    let webWindowCount = 0;
+
+    function openWebWindow(url) {
+        const portal = portals.find(p => p.url === url);
+        const title = portal ? portal.name : url;
+        const offset = (webWindowCount++ % 8) * 28;
+
+        const win = document.createElement('div');
+        win.className = 'app-window active';
+        win.style.left = (220 + offset) + 'px';
+        win.style.top = (130 + offset) + 'px';
+        win.style.width = '960px';
+        win.style.height = '600px';
+        win.style.zIndex = ++webWindowZ;
+        win.innerHTML = `
+            <div class="app-titlebar">
+                <span>🌐 ${title}</span>
+                <div class="app-controls">
+                    <a href="${url}" target="_blank" title="Open in new tab">↗</a>
+                    <button title="Maximize">▢</button>
+                    <button title="Close">✕</button>
+                </div>
+            </div>
+            <iframe src="${url}"></iframe>
+            <div class="app-note">If the page is blank, the site blocks embedding. Use ↗ to open it in a tab.</div>
+        `;
+        document.getElementById('desktop').appendChild(win);
+
+        const bar = win.querySelector('.app-titlebar');
+        const frame = win.querySelector('iframe');
+        const buttons = win.querySelectorAll('.app-controls button');
+        buttons[0].onclick = () => win.classList.toggle('max');
+        buttons[1].onclick = () => win.remove();
+        win.addEventListener('mousedown', () => { win.style.zIndex = ++webWindowZ; });
+        makeDraggable(win, bar, frame);
+    }
+
+    // KEYBOARD
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAllModals();
+        if (e.ctrlKey && e.key === 'm') { e.preventDefault(); toggleStart(); }
+    });
+</script>
+
+</body>
+</html>
